@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>The Dino Apocalypse Game</title>
+	<script src="./jquery/jquery-2.1.3.min.js"></script>
+	<script src="./bootstrap/js/bootstrap.min.js"></script>
+	<link href="./bootstrap/css/bootstrap.min.css" />
+	<style>
+		#dinosaur {
+			background-image:url('imgs/running-dino.gif');
+			background-repeat: no-repeat;
+			background-size: contain;
+			width:175px;
+			height:100px;
+			position: absolute;
+			top:400px;
+			left:0px;
+			z-index:10;
+		}
+		#background{
+			width:100%;
+			height:100%;
+			background-color: red;
+			z-index:5;
+			white-space:nowrap;
+			overflow-x:hidden;
+		}
+		#sub-background{
+			height:100%;
+			white-space:nowrap;
+			position:relative;
+			left:0px;
+		}
+		#game-world{
+			position: relative;
+			height:500px;
+			width: 100%;
+		}
+		.cactus {
+			width:100px;
+			height:130px;
+			background-image: url('imgs/pixelated-cactus.png');
+			background-repeat: no-repeat;
+			background-size: contain;
+			position: absolute;
+			bottom:0px;
+			display: inline-block;
+		}
+	</style>
+	<script>
+		$(document).ready(function(){
+			$.extend(jQuery.easing,{easeOutQuad:function (x,t,b,c,d){return -c *(t/=d)*(t-2) + b;}});
+			$.extend(jQuery.easing,{easeInQuad:function (x,t,b,c,d){return c*(t/=d)*t + b;}});
+			var jump = function(){
+				$("#dinosaur").animate({"top":"-=200px"},400,"easeOutQuad",function(){
+					$("#dinosaur").animate({"top":"+=200px"},400,"easeInQuad", function(){
+						lockOut = false;
+					});
+				});
+			}
+			var lockOut = false;
+			$(document).keydown(function(event){
+				if (event.which===38 && !lockOut) {
+					lockOut = true;
+					jump();
+				}
+			});
+			var deleteDeadCacti = function(){
+				$(".cactus").each(function(){
+					if(parseInt($(this).css("left"))<-1*parseInt($("#sub-background").css("left"))){
+						$(this).remove();
+					};
+				});
+			};
+			var buildLandscape = function(lastLeft){
+				var newLeft = lastLeft + 500 + Math.floor(Math.random()*400);
+				var newCactus = $(document.createElement('div')).addClass("cactus").css("left",newLeft);
+				newCactus.appendTo($("#sub-background"));
+				deleteDeadCacti();
+				buildTimeout = setTimeout(function(){buildLandscape(newLeft);},800);
+			};
+			buildLandscape(1000);
+			var scrollTimeout;
+			var scrollLandscape = function(){
+				$("#sub-background").css({"left":"-=10px"});
+				scrollTimeout = setTimeout(function(){scrollLandscape();},15);
+			};
+			scrollLandscape();
+			var checkTimeout;
+			var checkCollisions = function(){
+				$(".cactus").each(function(){
+					cactusPosition = $(this).offset();
+					dinoPosition = $("#dinosaur").offset();
+					cactusWidth = $(this).width();
+					cactusHeight = $(this).height();
+					dinoWidth = $("#dinosaur").width();
+					dinoHeight = $("#dinosaur").height();
+					if(
+						dinoPosition.left + dinoWidth > cactusPosition.left &&
+						dinoPosition.left < cactusPosition.left + cactusWidth &&
+						dinoPosition.top + dinoHeight > cactusPosition.top
+					) {
+						clearTimeout(scrollTimeout);
+						clearTimeout(buildTimeout);
+						clearTimeout(checkTimeout);
+						alert("GAME OVER");
+					}
+				});
+				checkTimeout = setTimeout(function(){checkCollisions();},100);
+			}
+			checkCollisions();
+		});
+	</script>
+</head>
+<body>
+<div class="container">
+	<div id="game-world">
+		<div id="dinosaur"></div>
+		<div id="background">
+			<div id="sub-background"></div>
+		</div>
+		<div id="score"></div>
+	</div>
+</div>
+</body>
+</html>
